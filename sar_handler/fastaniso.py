@@ -22,266 +22,269 @@
 import numpy as np
 import warnings
 
-def anisodiff(img,niter=1,kappa=50,gamma=0.1,step=(1.,1.),option=1,ploton=False):
-	"""
-	Anisotropic diffusion.
 
-	Usage:
-	imgout = anisodiff(im, niter, kappa, gamma, option)
+def anisodiff(img, niter=1, kappa=50, gamma=0.1, step=(1., 1.), option=1, ploton=False):
+    """
+    Anisotropic diffusion.
 
-	Arguments:
-	        img    - input image
-	        niter  - number of iterations
-	        kappa  - conduction coefficient 20-100 ?
-	        gamma  - max value of .25 for stability
-	        step   - tuple, the distance between adjacent pixels in (y,x)
-	        option - 1 Perona Malik diffusion equation No 1
-	                 2 Perona Malik diffusion equation No 2
-	        ploton - if True, the image will be plotted on every iteration
+    Usage:
+    imgout = anisodiff(im, niter, kappa, gamma, option)
 
-	Returns:
-	        imgout   - diffused image.
+    Arguments:
+            img    - input image
+            niter  - number of iterations
+            kappa  - conduction coefficient 20-100 ?
+            gamma  - max value of .25 for stability
+            step   - tuple, the distance between adjacent pixels in (y,x)
+            option - 1 Perona Malik diffusion equation No 1
+                     2 Perona Malik diffusion equation No 2
+            ploton - if True, the image will be plotted on every iteration
 
-	kappa controls conduction as a function of gradient.  If kappa is low
-	small intensity gradients are able to block conduction and hence diffusion
-	across step edges.  A large value reduces the influence of intensity
-	gradients on conduction.
+    Returns:
+            imgout   - diffused image.
 
-	gamma controls speed of diffusion (you usually want it at a maximum of
-	0.25)
+    kappa controls conduction as a function of gradient.  If kappa is low
+    small intensity gradients are able to block conduction and hence diffusion
+    across step edges.  A large value reduces the influence of intensity
+    gradients on conduction.
 
-	step is used to scale the gradients in case the spacing between adjacent
-	pixels differs in the x and y axes
+    gamma controls speed of diffusion (you usually want it at a maximum of
+    0.25)
 
-	Diffusion equation 1 favours high contrast edges over low contrast ones.
-	Diffusion equation 2 favours wide regions over smaller ones.
+    step is used to scale the gradients in case the spacing between adjacent
+    pixels differs in the x and y axes
 
-	Reference: 
-	P. Perona and J. Malik. 
-	Scale-space and edge detection using ansotropic diffusion.
-	IEEE Transactions on Pattern Analysis and Machine Intelligence, 
-	12(7):629-639, July 1990.
+    Diffusion equation 1 favours high contrast edges over low contrast ones.
+    Diffusion equation 2 favours wide regions over smaller ones.
 
-	Original MATLAB code by Peter Kovesi  
-	School of Computer Science & Software Engineering
-	The University of Western Australia
-	pk @ csse uwa edu au
-	<http://www.csse.uwa.edu.au>
+    Reference: 
+    P. Perona and J. Malik. 
+    Scale-space and edge detection using ansotropic diffusion.
+    IEEE Transactions on Pattern Analysis and Machine Intelligence, 
+    12(7):629-639, July 1990.
 
-	Translated to Python and optimised by Alistair Muldal
-	Department of Pharmacology
-	University of Oxford
-	<alistair.muldal@pharm.ox.ac.uk>
+    Original MATLAB code by Peter Kovesi  
+    School of Computer Science & Software Engineering
+    The University of Western Australia
+    pk @ csse uwa edu au
+    <http://www.csse.uwa.edu.au>
 
-	June 2000  original version.       
-	March 2002 corrected diffusion eqn No 2.
-	July 2012 translated to Python
-	"""
+    Translated to Python and optimised by Alistair Muldal
+    Department of Pharmacology
+    University of Oxford
+    <alistair.muldal@pharm.ox.ac.uk>
 
-	# ...you could always diffuse each color channel independently if you
-	# really want
-	if img.ndim == 3:
-		warnings.warn("Only grayscale images allowed, converting to 2D matrix")
-		img = img.mean(2)
+    June 2000  original version.       
+    March 2002 corrected diffusion eqn No 2.
+    July 2012 translated to Python
+    """
 
-	# initialize output array
-	img = img.astype('float32')
-	imgout = img.copy()
+    # ...you could always diffuse each color channel independently if you
+    # really want
+    if img.ndim == 3:
+        warnings.warn("Only grayscale images allowed, converting to 2D matrix")
+        img = img.mean(2)
 
-	# initialize some internal variables
-	deltaS = np.zeros_like(imgout)
-	deltaE = deltaS.copy()
-	NS = deltaS.copy()
-	EW = deltaS.copy()
-	gS = np.ones_like(imgout)
-	gE = gS.copy()
+    # initialize output array
+    img = img.astype('float32')
+    imgout = img.copy()
 
-	# create the plot figure, if requested
-	if ploton:
-		import pylab as pl
-		from time import sleep
+    # initialize some internal variables
+    deltaS = np.zeros_like(imgout)
+    deltaE = deltaS.copy()
+    NS = deltaS.copy()
+    EW = deltaS.copy()
+    gS = np.ones_like(imgout)
+    gE = gS.copy()
 
-		fig = pl.figure(figsize=(20,5.5),num="Anisotropic diffusion")
-		ax1,ax2 = fig.add_subplot(1,2,1),fig.add_subplot(1,2,2)
+    # create the plot figure, if requested
+    if ploton:
+        import pylab as pl
+        from time import sleep
 
-		ax1.imshow(img,interpolation='nearest')
-		ih = ax2.imshow(imgout,interpolation='nearest',animated=True)
-		ax1.set_title("Original image")
-		ax2.set_title("Iteration 0")
+        fig = pl.figure(figsize=(20, 5.5), num="Anisotropic diffusion")
+        ax1, ax2 = fig.add_subplot(1, 2, 1), fig.add_subplot(1, 2, 2)
 
-		fig.canvas.draw()
+        ax1.imshow(img, interpolation='nearest')
+        ih = ax2.imshow(imgout, interpolation='nearest', animated=True)
+        ax1.set_title("Original image")
+        ax2.set_title("Iteration 0")
 
-	for ii in range(niter):
+        fig.canvas.draw()
 
-		# calculate the diffs
-		deltaS[:-1,: ] = np.diff(imgout,axis=0)
-		deltaE[: ,:-1] = np.diff(imgout,axis=1)
+    for ii in range(niter):
 
-		# conduction gradients (only need to compute one per dim!)
-		if option == 1:
-			gS = np.exp(-(deltaS/kappa)**2.)/step[0]
-			gE = np.exp(-(deltaE/kappa)**2.)/step[1]
-		elif option == 2:
-			gS = 1./(1.+(deltaS/kappa)**2.)/step[0]
-			gE = 1./(1.+(deltaE/kappa)**2.)/step[1]
+        # calculate the diffs
+        deltaS[:-1, :] = np.diff(imgout, axis=0)
+        deltaE[:, :-1] = np.diff(imgout, axis=1)
 
-		# update matrices
-		E = gE*deltaE
-		S = gS*deltaS
+        # conduction gradients (only need to compute one per dim!)
+        if option == 1:
+            gS = np.exp(-(deltaS/kappa)**2.)/step[0]
+            gE = np.exp(-(deltaE/kappa)**2.)/step[1]
+        elif option == 2:
+            gS = 1./(1.+(deltaS/kappa)**2.)/step[0]
+            gE = 1./(1.+(deltaE/kappa)**2.)/step[1]
 
-		# subtract a copy that has been shifted 'North/West' by one
-		# pixel. don't as questions. just do it. trust me.
-		NS[:] = S
-		EW[:] = E
-		NS[1:,:] -= S[:-1,:]
-		EW[:,1:] -= E[:,:-1]
+        # update matrices
+        E = gE*deltaE
+        S = gS*deltaS
 
-		# update the image
-		imgout += gamma*(NS+EW)
+        # subtract a copy that has been shifted 'North/West' by one
+        # pixel. don't as questions. just do it. trust me.
+        NS[:] = S
+        EW[:] = E
+        NS[1:, :] -= S[:-1, :]
+        EW[:, 1:] -= E[:, :-1]
 
-		if ploton:
-			iterstring = "Iteration %i" %(ii+1)
-			ih.set_data(imgout)
-			ax2.set_title(iterstring)
-			fig.canvas.draw()
-			# sleep(0.01)
+        # update the image
+        imgout += gamma*(NS+EW)
 
-	return imgout
+        if ploton:
+            iterstring = "Iteration %i" % (ii+1)
+            ih.set_data(imgout)
+            ax2.set_title(iterstring)
+            fig.canvas.draw()
+            # sleep(0.01)
 
-def anisodiff3(stack,niter=1,kappa=50,gamma=0.1,step=(1.,1.,1.),option=1,ploton=False):
-	"""
-	3D Anisotropic diffusion.
+    return imgout
 
-	Usage:
-	stackout = anisodiff(stack, niter, kappa, gamma, option)
 
-	Arguments:
-	        stack  - input stack
-	        niter  - number of iterations
-	        kappa  - conduction coefficient 20-100 ?
-	        gamma  - max value of .25 for stability
-	        step   - tuple, the distance between adjacent pixels in (z,y,x)
-	        option - 1 Perona Malik diffusion equation No 1
-	                 2 Perona Malik diffusion equation No 2
-	        ploton - if True, the middle z-plane will be plotted on every 
-	        	 iteration
+def anisodiff3(stack, niter=1, kappa=50, gamma=0.1, step=(1., 1., 1.), option=1, ploton=False):
+    """
+    3D Anisotropic diffusion.
 
-	Returns:
-	        stackout   - diffused stack.
+    Usage:
+    stackout = anisodiff(stack, niter, kappa, gamma, option)
 
-	kappa controls conduction as a function of gradient.  If kappa is low
-	small intensity gradients are able to block conduction and hence diffusion
-	across step edges.  A large value reduces the influence of intensity
-	gradients on conduction.
+    Arguments:
+            stack  - input stack
+            niter  - number of iterations
+            kappa  - conduction coefficient 20-100 ?
+            gamma  - max value of .25 for stability
+            step   - tuple, the distance between adjacent pixels in (z,y,x)
+            option - 1 Perona Malik diffusion equation No 1
+                     2 Perona Malik diffusion equation No 2
+            ploton - if True, the middle z-plane will be plotted on every 
+                     iteration
 
-	gamma controls speed of diffusion (you usually want it at a maximum of
-	0.25)
+    Returns:
+            stackout   - diffused stack.
 
-	step is used to scale the gradients in case the spacing between adjacent
-	pixels differs in the x,y and/or z axes
+    kappa controls conduction as a function of gradient.  If kappa is low
+    small intensity gradients are able to block conduction and hence diffusion
+    across step edges.  A large value reduces the influence of intensity
+    gradients on conduction.
 
-	Diffusion equation 1 favours high contrast edges over low contrast ones.
-	Diffusion equation 2 favours wide regions over smaller ones.
+    gamma controls speed of diffusion (you usually want it at a maximum of
+    0.25)
 
-	Reference: 
-	P. Perona and J. Malik. 
-	Scale-space and edge detection using ansotropic diffusion.
-	IEEE Transactions on Pattern Analysis and Machine Intelligence, 
-	12(7):629-639, July 1990.
+    step is used to scale the gradients in case the spacing between adjacent
+    pixels differs in the x,y and/or z axes
 
-	Original MATLAB code by Peter Kovesi  
-	School of Computer Science & Software Engineering
-	The University of Western Australia
-	pk @ csse uwa edu au
-	<http://www.csse.uwa.edu.au>
+    Diffusion equation 1 favours high contrast edges over low contrast ones.
+    Diffusion equation 2 favours wide regions over smaller ones.
 
-	Translated to Python and optimised by Alistair Muldal
-	Department of Pharmacology
-	University of Oxford
-	<alistair.muldal@pharm.ox.ac.uk>
+    Reference: 
+    P. Perona and J. Malik. 
+    Scale-space and edge detection using ansotropic diffusion.
+    IEEE Transactions on Pattern Analysis and Machine Intelligence, 
+    12(7):629-639, July 1990.
 
-	June 2000  original version.       
-	March 2002 corrected diffusion eqn No 2.
-	July 2012 translated to Python
-	"""
+    Original MATLAB code by Peter Kovesi  
+    School of Computer Science & Software Engineering
+    The University of Western Australia
+    pk @ csse uwa edu au
+    <http://www.csse.uwa.edu.au>
 
-	# ...you could always diffuse each color channel independently if you
-	# really want
-	if stack.ndim == 4:
-		warnings.warn("Only grayscale stacks allowed, converting to 3D matrix")
-		stack = stack.mean(3)
+    Translated to Python and optimised by Alistair Muldal
+    Department of Pharmacology
+    University of Oxford
+    <alistair.muldal@pharm.ox.ac.uk>
 
-	# initialize output array
-	stack = stack.astype('float32')
-	stackout = stack.copy()
+    June 2000  original version.       
+    March 2002 corrected diffusion eqn No 2.
+    July 2012 translated to Python
+    """
 
-	# initialize some internal variables
-	deltaS = np.zeros_like(stackout)
-	deltaE = deltaS.copy()
-	deltaD = deltaS.copy()
-	NS = deltaS.copy()
-	EW = deltaS.copy()
-	UD = deltaS.copy()
-	gS = np.ones_like(stackout)
-	gE = gS.copy()
-	gD = gS.copy()
+    # ...you could always diffuse each color channel independently if you
+    # really want
+    if stack.ndim == 4:
+        warnings.warn("Only grayscale stacks allowed, converting to 3D matrix")
+        stack = stack.mean(3)
 
-	# create the plot figure, if requested
-	if ploton:
-		import pylab as pl
-		from time import sleep
+    # initialize output array
+    stack = stack.astype('float32')
+    stackout = stack.copy()
 
-		showplane = stack.shape[0]//2
+    # initialize some internal variables
+    deltaS = np.zeros_like(stackout)
+    deltaE = deltaS.copy()
+    deltaD = deltaS.copy()
+    NS = deltaS.copy()
+    EW = deltaS.copy()
+    UD = deltaS.copy()
+    gS = np.ones_like(stackout)
+    gE = gS.copy()
+    gD = gS.copy()
 
-		fig = pl.figure(figsize=(20,5.5),num="Anisotropic diffusion")
-		ax1,ax2 = fig.add_subplot(1,2,1),fig.add_subplot(1,2,2)
+    # create the plot figure, if requested
+    if ploton:
+        import pylab as pl
+        from time import sleep
 
-		ax1.imshow(stack[showplane,...].squeeze(),interpolation='nearest')
-		ih = ax2.imshow(stackout[showplane,...].squeeze(),interpolation='nearest',animated=True)
-		ax1.set_title("Original stack (Z = %i)" %showplane)
-		ax2.set_title("Iteration 0")
+        showplane = stack.shape[0]//2
 
-		fig.canvas.draw()
+        fig = pl.figure(figsize=(20, 5.5), num="Anisotropic diffusion")
+        ax1, ax2 = fig.add_subplot(1, 2, 1), fig.add_subplot(1, 2, 2)
 
-	for ii in xrange(niter):
+        ax1.imshow(stack[showplane, ...].squeeze(), interpolation='nearest')
+        ih = ax2.imshow(stackout[showplane, ...].squeeze(),
+                        interpolation='nearest', animated=True)
+        ax1.set_title("Original stack (Z = %i)" % showplane)
+        ax2.set_title("Iteration 0")
 
-		# calculate the diffs
-		deltaD[:-1,: ,:  ] = np.diff(stackout,axis=0)
-		deltaS[:  ,:-1,: ] = np.diff(stackout,axis=1)
-		deltaE[:  ,: ,:-1] = np.diff(stackout,axis=2)
+        fig.canvas.draw()
 
-		# conduction gradients (only need to compute one per dim!)
-		if option == 1:
-			gD = np.exp(-(deltaD/kappa)**2.)/step[0]
-			gS = np.exp(-(deltaS/kappa)**2.)/step[1]
-			gE = np.exp(-(deltaE/kappa)**2.)/step[2]
-		elif option == 2:
-			gD = 1./(1.+(deltaD/kappa)**2.)/step[0]
-			gS = 1./(1.+(deltaS/kappa)**2.)/step[1]
-			gE = 1./(1.+(deltaE/kappa)**2.)/step[2]
+    for ii in xrange(niter):
 
-		# update matrices
-		D = gD*deltaD
-		E = gE*deltaE
-		S = gS*deltaS
+        # calculate the diffs
+        deltaD[:-1, :, :] = np.diff(stackout, axis=0)
+        deltaS[:, :-1, :] = np.diff(stackout, axis=1)
+        deltaE[:, :, :-1] = np.diff(stackout, axis=2)
 
-		# subtract a copy that has been shifted 'Up/North/West' by one
-		# pixel. don't as questions. just do it. trust me.
-		UD[:] = D
-		NS[:] = S
-		EW[:] = E
-		UD[1:,: ,: ] -= D[:-1,:  ,:  ]
-		NS[: ,1:,: ] -= S[:  ,:-1,:  ]
-		EW[: ,: ,1:] -= E[:  ,:  ,:-1]
+        # conduction gradients (only need to compute one per dim!)
+        if option == 1:
+            gD = np.exp(-(deltaD/kappa)**2.)/step[0]
+            gS = np.exp(-(deltaS/kappa)**2.)/step[1]
+            gE = np.exp(-(deltaE/kappa)**2.)/step[2]
+        elif option == 2:
+            gD = 1./(1.+(deltaD/kappa)**2.)/step[0]
+            gS = 1./(1.+(deltaS/kappa)**2.)/step[1]
+            gE = 1./(1.+(deltaE/kappa)**2.)/step[2]
 
-		# update the image
-		stackout += gamma*(UD+NS+EW)
+        # update matrices
+        D = gD*deltaD
+        E = gE*deltaE
+        S = gS*deltaS
 
-		if ploton:
-			iterstring = "Iteration %i" %(ii+1)
-			ih.set_data(stackout[showplane,...].squeeze())
-			ax2.set_title(iterstring)
-			fig.canvas.draw()
-			# sleep(0.01)
+        # subtract a copy that has been shifted 'Up/North/West' by one
+        # pixel. don't as questions. just do it. trust me.
+        UD[:] = D
+        NS[:] = S
+        EW[:] = E
+        UD[1:, :, :] -= D[:-1, :, :]
+        NS[:, 1:, :] -= S[:, :-1, :]
+        EW[:, :, 1:] -= E[:, :, :-1]
 
-	return stackout
+        # update the image
+        stackout += gamma*(UD+NS+EW)
+
+        if ploton:
+            iterstring = "Iteration %i" % (ii+1)
+            ih.set_data(stackout[showplane, ...].squeeze())
+            ax2.set_title(iterstring)
+            fig.canvas.draw()
+            # sleep(0.01)
+
+    return stackout
