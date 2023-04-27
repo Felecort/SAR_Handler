@@ -1,10 +1,17 @@
 from setuptools import find_packages, setup
+from pathlib import Path
+
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='sar_handler',
     packages=find_packages(include=['sar_handler']),
-    version='0.1.3',
+    version='0.1.4',
     description='Handler SAR images',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Felecort',
     # author_email="@gmail.com",
     url="https://github.com/Felecort/SAR_Handler",
