@@ -3,12 +3,12 @@ from pathlib import Path
 from datetime import datetime
 
 
-version = '0.1.6'
-changes = "Added separeta folder for scr"
+version = '0.1.7'
+changes = "src dir removed"
 
 SHIFT = "=" * 30
 date = datetime.now()
-changes = f"\n{SHIFT}\n{date}\n{changes}\n"
+changes = f"\n{SHIFT}\n{date} | {version}\n{changes}\n"
 
 if __name__ == "__main__":
     with open("./CHANGELOG.txt", "a") as f:
