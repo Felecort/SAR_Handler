@@ -1,6 +1,18 @@
 from setuptools import find_packages, setup
 from pathlib import Path
+from datetime import datetime
 
+
+version = '0.1.6'
+changes = "Added separeta folder for scr"
+
+SHIFT = "=" * 30
+date = datetime.now()
+changes = f"\n{SHIFT}\n{date}\n{changes}\n"
+
+if __name__ == "__main__":
+    with open("./CHANGELOG.txt", "a") as f:
+        f.write(changes)
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -8,7 +20,7 @@ long_description = (this_directory / "README.md").read_text()
 setup(
     name='sar_handler',
     packages=find_packages(include=['sar_handler']),
-    version='0.1.4',
+    version=version,
     description='Handler SAR images',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -26,3 +38,4 @@ setup(
     tests_require=['pytest'],
     test_suite='tests',
 )
+
