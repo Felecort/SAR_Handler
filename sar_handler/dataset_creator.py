@@ -3,9 +3,9 @@ import csv
 from random import randint
 from os import listdir
 from PIL import ImageOps, Image
-from image_processing import *
-from check_validity_of_values import *
-from assistive_funcs import *
+from .image_processing import *
+from .check_validity_of_values import *
+from .assistive_funcs import *
 
 
 def generate_csv(*, win_size, dump_to_file=1000, step=1,

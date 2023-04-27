@@ -2,12 +2,12 @@ from time import time
 from os import listdir
 from PIL import Image, ImageOps
 import numpy as np
-from torch import Tensor, no_grad
 import pathlib
+from torch import Tensor, no_grad
 from tqdm import tqdm
-from image_processing import add_borders
 from skimage.metrics import structural_similarity as ssim
 from scipy import signal
+from .image_processing import add_borders
 
 
 def delta_time():
