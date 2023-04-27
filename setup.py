@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 setup(
     name='sar_handler',
     packages=find_packages(include=['sar_handler']),
-    version='0.1.0',
+    version='0.1.3',
     description='Handler SAR images',
     author='Felecort',
     # author_email="@gmail.com",
