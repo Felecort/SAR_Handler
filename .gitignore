@@ -2,4 +2,6 @@ __pycache__
 .venv
 .eggs
 .pytest_cache
+build
+dist
 sar_handler.egg-info
