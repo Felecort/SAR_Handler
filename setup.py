@@ -3,8 +3,8 @@ from pathlib import Path
 from datetime import datetime
 
 
-version = '0.1.7'
-changes = "src dir removed"
+version = '0.1.8'
+changes = "bug with regression normalized fixed"
 
 SHIFT = "=" * 30
 date = datetime.now()
