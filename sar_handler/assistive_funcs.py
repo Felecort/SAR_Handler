@@ -58,7 +58,9 @@ def filtering_image(model, out_path, path_to_image, image_name, win_size, device
 
         if not classifier and normalize_data:
             out_image *= 255
-        out = np.where(out_image >= 255, 255, out_image)
+        if not classifier:
+            out = np.where(out_image >= 255, 255, out_image)
+            out = np.where(out_image < 0, 0, out)
         out = out.astype(np.uint8)
         out = Image.fromarray(out)
         out.save(out_path)
