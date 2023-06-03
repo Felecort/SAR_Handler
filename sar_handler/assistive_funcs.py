@@ -59,11 +59,11 @@ def filtering_image(model, out_path, path_to_image, image_name, win_size, device
         if not classifier and normalize_data:
             out_image *= 255
         if not classifier:
-            out = np.where(out_image >= 255, 255, out_image)
-            out = np.where(out_image < 0, 0, out)
-        out = out.astype(np.uint8)
-        out = Image.fromarray(out)
-        out.save(out_path)
+            out_image = np.where(out_image >= 255, 255, out_image)
+            out_image = np.where(out_image < 0, 0, out_image)
+        out_image = out_image.astype(np.uint8)
+        out_image = Image.fromarray(out_image)
+        out_image.save(out_path)
 
 
 def check_ssim(filtered_images, genuine_images, image_name, print_metric=False) -> None:
